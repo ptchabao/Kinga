@@ -1,0 +1,16 @@
+node_modules
+**/node_modules
+.git
+.gitignore
+.vscode
+.venv
+**/.venv
+.next
+**/.next
+dist
+**/dist
+coverage
+**/coverage
+.env
+.env.*
+!.env.example

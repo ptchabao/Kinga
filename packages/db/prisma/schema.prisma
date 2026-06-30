@@ -1,0 +1,222 @@
+generator client {
+  provider             = "prisma-client-py"
+  recursive_type_depth = 5
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── USERS & AUTH ───────────────────────────────────────────────
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String
+  name          String?
+  avatarUrl     String?
+  createdAt     DateTime       @default(now())
+  conversations Conversation[]
+  apiKeys       ApiKey[]
+  memberships   Membership[]
+  auditLogs     AuditLog[]
+  organizationRoles UserOrganizationRole[]
+}
+
+model ApiKey {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RevokedToken {
+  id        String   @id @default(uuid())
+  jti       String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([jti])
+  @@index([expiresAt])
+}
+
+// ─── ORGANIZATIONS & TEAMS ─────────────────────────────────────
+
+model Organization {
+  id        String       @id @default(uuid())
+  name      String
+  slug      String       @unique
+  plan      String       @default("free") // free | starter | pro | enterprise
+  tokenLimit Int         @default(10000)
+  tokenUsed  Int         @default(0)
+  createdAt DateTime     @default(now())
+  members   Membership[]
+  teams     Team[]
+  rules     Rule[]
+  conversations Conversation[]
+  auditLogs AuditLog[]
+  invoices  Invoice[]
+  ruleSets  MaskingRuleSet[]
+  roles     Role[]
+  userRoles UserOrganizationRole[]
+}
+
+model Team {
+  id        String       @id @default(uuid())
+  name      String
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  members   Membership[]
+  rules     Rule[]
+  createdAt DateTime     @default(now())
+}
+
+model Membership {
+  id        String       @id @default(uuid())
+  role      String       @default("member") // member | manager | admin
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  teamId    String?
+  team      Team?        @relation(fields: [teamId], references: [id])
+  createdAt DateTime     @default(now())
+
+  @@unique([userId, orgId])
+}
+
+// ─── MASKING RULES ─────────────────────────────────────────────
+
+model Rule {
+  id        String          @id @default(uuid())
+  category  String          // names | contact | finance | dates | documents | custom
+  isActive  Boolean         @default(true)
+  level     String          @default("low") // low | medium | high | delete
+  pattern   String?         // for custom regex rules
+  format    String?         // custom alias format (e.g. "USER_{id}")
+  precision String?         // optional config
+  orgId     String?
+  org       Organization?   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  teamId    String?
+  team      Team?           @relation(fields: [teamId], references: [id])
+  ruleSetId String?
+  ruleSet   MaskingRuleSet? @relation(fields: [ruleSetId], references: [id], onDelete: Cascade)
+  updatedAt DateTime        @updatedAt
+
+  @@index([orgId])
+  @@index([ruleSetId])
+}
+
+model MaskingRuleSet {
+  id            String         @id @default(uuid())
+  orgId         String
+  org           Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  seed          String         // encrypted seed
+  status        String         @default("active") // active | archived
+  version       Int            @default(1)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  rules         Rule[]
+  conversations Conversation[]
+
+  @@index([orgId])
+  @@index([orgId, status])
+}
+
+// ─── CONVERSATIONS & MESSAGES ──────────────────────────────────
+
+model Conversation {
+  id        String          @id @default(uuid())
+  title     String
+  tags      String          @default("") // comma-separated: "finance,urgent"
+  status    String          @default("active") // draft | active | completed | archived
+  modelUsed String          @default("safiri-sim") // gpt-4 | claude | safiri-sim
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  userId    String?
+  user      User?           @relation(fields: [userId], references: [id])
+  orgId     String?
+  org       Organization?   @relation(fields: [orgId], references: [id])
+  ruleSetId String?
+  ruleSet   MaskingRuleSet? @relation(fields: [ruleSetId], references: [id])
+  messages  Message[]
+
+  @@index([ruleSetId])
+  @@index([orgId, userId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  content        String
+  maskedContent  String?
+  role           String       // user | assistant
+  tokenCount     Int          @default(0)
+  modelUsed      String       @default("safiri-sim")
+  createdAt      DateTime     @default(now())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+// ─── AUDIT & COMPLIANCE ────────────────────────────────────────
+
+model AuditLog {
+  id        String        @id @default(uuid())
+  action    String        // chat.send | rule.toggle | member.invite | key.generate | login
+  details   String?       // JSON string with extra context
+  ip        String?
+  userId    String?
+  user      User?         @relation(fields: [userId], references: [id])
+  orgId     String?
+  org       Organization? @relation(fields: [orgId], references: [id])
+  createdAt DateTime      @default(now())
+
+  @@index([orgId, createdAt])
+}
+
+// ─── BILLING ───────────────────────────────────────────────────
+
+model Invoice {
+  id        String        @id @default(uuid())
+  amount    Float
+  currency  String        @default("EUR") // EUR | USD | XOF
+  status    String        @default("paid") // paid | pending | failed
+  period    String        // "2026-06" format
+  orgId     String
+  org       Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+}
+
+// ─── RBAC ──────────────────────────────────────────────────────
+
+model Role {
+  id             String                 @id @default(uuid())
+  name           String                 // e.g. "MEMBER", "MANAGER", "ADMIN"
+  organizationId String
+  organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  permissions    String                 // Stored as JSON string (e.g. '["ORGANIZATION:READ"]')
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  userRoles      UserOrganizationRole[]
+
+  @@unique([name, organizationId])
+}
+
+model UserOrganizationRole {
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  roleId         String
+  role           Role         @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([userId, organizationId])
+}

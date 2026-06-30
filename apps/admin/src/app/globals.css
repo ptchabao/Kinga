@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Colors — DESIGN.md Swiss Ledger */
+  --color-paper-white: #f6f6f8;
+  --color-card-white: #ffffff;
+  --color-deep-ink: #011821;
+  --color-carbon: #12161e;
+  --color-slate: #7c7f88;
+  --color-mist: #e3e4e8;
+  --color-fog: #a9acb6;
+  --color-graphite: #3b3e47;
+  --color-deep-indigo: #111a4a;
+  --color-ember-orange: #ec652b;
+  --color-midnight-teal: #023247;
+  --color-forest-teal: #167e6c;
+  --color-sky-blue: #7ea7e9;
+  --color-pale-cyan: #c1e8ef;
+  --color-mint: #44b48b;
+  --color-lavender: #9f7aee;
+
+  /* Typography */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Spacing */
+  --spacing-4: 4px;
+  --spacing-8: 8px;
+  --spacing-12: 12px;
+  --spacing-16: 16px;
+  --spacing-20: 20px;
+  --spacing-24: 24px;
+  --spacing-32: 32px;
+  --spacing-40: 40px;
+  --spacing-48: 48px;
+  --spacing-64: 64px;
+  --spacing-80: 80px;
+  --spacing-96: 96px;
+
+  /* Border Radius */
+  --radius-sm: 2px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 9999px;
+}
+
+:root {
+  --background: #f6f6f8;
+  --foreground: #011821;
+
+  /* Shadows (blue-tinted per DESIGN.md) */
+  --shadow-subtle: rgba(17, 26, 74, 0.1) 0px 1px 3px 0px, rgba(17, 26, 74, 0.05) 0px 1px 0px 0px;
+  --shadow-subtle-2: rgba(87, 90, 100, 0.12) 0px 0px 0px 1px;
+  --shadow-card: rgba(17, 26, 74, 0.1) 0px 1px 3px 0px, rgba(17, 26, 74, 0.05) 0px 1px 0px 0px, inset rgba(255, 255, 255, 0.5) 0px 1px 0px 0px, inset rgba(255, 255, 255, 0.5) 0px 1px 4px 0px;
+  --shadow-xl: rgba(0, 0, 0, 0.02) 0px 40px 32px 0px, rgba(0, 0, 0, 0.03) 0px 22px 18px 0px, rgba(0, 0, 0, 0.03) 0px 12px 10px 0px, rgba(0, 0, 0, 0.04) 0px 7px 5px 0px, rgba(0, 0, 0, 0.07) 0px 3px 2px 0px;
+  --shadow-sm: rgba(0, 0, 0, 0.05) 0px 4px 8px 0px, rgba(0, 0, 0, 0.1) 0px 2px 4px 0px, rgba(0, 0, 0, 0.1) 0px 1px 1px 0px;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-sans);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Minimal scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-mist);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-fog);
+}
+
+/* Utility shadow classes */
+.shadow-card {
+  box-shadow: var(--shadow-card);
+}
+.shadow-elevated {
+  box-shadow: var(--shadow-xl);
+}
+.shadow-hairline {
+  box-shadow: var(--shadow-subtle-2);
+}

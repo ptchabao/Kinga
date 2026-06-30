@@ -1,0 +1,8 @@
+{
+  "name": "@safiri/db",
+  "version": "1.0.0",
+  "dependencies": {},
+  "devDependencies": {
+    "prisma": "^5.10.2"
+  }
+}
